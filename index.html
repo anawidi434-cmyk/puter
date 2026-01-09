@@ -1,179 +1,168 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Generator Fix - Reset Button</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://js.puter.com/v2/"></script>
-
-  <style>
-    /* CSS untuk memaksa tombol reset muncul di atas segalanya */
-    #fixed-reset-area {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999999 !important;
-      display: block !important;
-    }
-    .pulsing-button {
-      animation: pulse-red 2s infinite;
-    }
-    @keyframes pulse-red {
-      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(220, 38, 38, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Generator - Auto Reset Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
 </head>
+<body class="bg-[#0a0a0a] text-white font-sans">
 
-<body class="bg-[#050505] text-white min-h-screen">
-
-  <div id="fixed-reset-area">
-    <button onclick="fullReset()" 
-      class="pulsing-button bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-black shadow-2xl flex items-center gap-2 border-2 border-white transition-all transform active:scale-90">
-      🔄 RESET AKUN / KUOTA
-    </button>
-  </div>
-
-  <div class="max-w-4xl mx-auto p-6 pt-12">
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold flex items-center gap-2">
-        🎬 AI Image & Video Generator
-      </h1>
-      <p class="text-gray-500 text-sm">Gratis • Tanpa API Key • Puter.js</p>
-    </header>
-
-    <div class="bg-[#111] p-6 rounded-2xl border border-gray-800 shadow-2xl">
-      <textarea id="prompt"
-        class="w-full p-4 rounded-xl bg-black border border-gray-800 focus:border-blue-600 outline-none text-white mb-4 min-h-[120px]"
-        placeholder="Ketik deskripsi di sini..."></textarea>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 font-bold uppercase">Aspect Ratio</label>
-          <select id="ratio" class="w-full bg-black border border-gray-800 p-3 rounded-lg">
-            <option value="1:1">1:1 (Square)</option>
-            <option value="16:9" selected>16:9 (Landscape)</option>
-            <option value="9:16">9:16 (Portrait)</option>
-          </select>
-        </div>
-        <div class="space-y-1">
-          <label class="text-[10px] text-gray-500 font-bold uppercase">Durasi Video</label>
-          <select id="duration" class="w-full bg-black border border-gray-800 p-3 rounded-lg">
-            <option value="4">4 detik</option>
-            <option value="8" selected>8 detik</option>
-          </select>
-        </div>
-        <div class="flex items-end gap-2">
-          <button onclick="runGen('image')" class="flex-1 bg-emerald-600 hover:bg-emerald-700 py-3 rounded-lg font-bold transition">🖼 Image</button>
-          <button onclick="runGen('video')" class="flex-1 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-bold transition">🎥 Video</button>
-        </div>
-      </div>
+    <div class="bg-blue-900/20 border-b border-blue-500/30 p-3 text-center text-xs text-blue-400">
+        Auto-Reset Active: Jika kuota habis, halaman akan otomatis refresh untuk reset akun.
     </div>
 
-    <div id="loader" class="hidden mt-10 text-center animate-pulse text-yellow-500 font-bold">
-      ⏳ AI sedang bekerja... Harap tunggu...
-    </div>
-    
-    <div id="main-result" class="mt-10 flex justify-center"></div>
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                🎬 AI Video & Image
+            </h1>
+            <button onclick="totalReset()" class="text-[10px] bg-red-900/30 hover:bg-red-800/50 border border-red-500/50 px-3 py-1 rounded text-red-400 transition">
+                Reset Manual
+            </button>
+        </div>
 
-    <div class="mt-16">
-      <h2 class="text-xl font-bold mb-6 flex items-center gap-2">📂 History</h2>
-      <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
-    </div>
-  </div>
+        <div class="bg-[#151515] p-6 rounded-2xl border border-gray-800 shadow-2xl mb-8">
+            <textarea id="prompt" 
+                class="w-full p-4 bg-black border border-gray-800 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all mb-4" 
+                rows="3" 
+                placeholder="Contoh: Cinematic robot in a forest, high detail..."></textarea>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-gray-500 mb-1 uppercase font-bold">Ratio</label>
+                    <select id="ratio" class="bg-black border border-gray-700 p-2 rounded-lg text-sm outline-none">
+                        <option value="16:9">16:9</option>
+                        <option value="1:1">1:1</option>
+                        <option value="9:16">9:16</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-gray-500 mb-1 uppercase font-bold">Durasi</label>
+                    <select id="duration" class="bg-black border border-gray-700 p-2 rounded-lg text-sm outline-none">
+                        <option value="4">4 Detik</option>
+                        <option value="8">8 Detik</option>
+                    </select>
+                </div>
+                <button onclick="generate('image')" class="h-10 mt-5 bg-white text-black rounded-lg font-bold hover:bg-gray-200 transition">Gambar</button>
+                <button onclick="generate('video')" class="h-10 mt-5 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 transition">Video</button>
+            </div>
+        </div>
 
-<script>
-// FUNGSI RESET TOTAL
-async function fullReset() {
-    if(confirm("Hapus sesi sekarang? Ini akan merefresh halaman dan mencoba mendapatkan kuota baru.")) {
-        try {
-            // Logout dari Puter
-            await puter.auth.signOut();
-            // Bersihkan semua data browser terkait sesi
-            localStorage.clear();
-            sessionStorage.clear();
-            // Tambahkan parameter unik agar browser tidak memuat cache lama
-            window.location.href = window.location.pathname + "?v=" + Date.now();
-        } catch (e) {
-            window.location.reload();
+        <div id="loader" class="hidden flex flex-col items-center my-10 animate-pulse">
+            <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p class="text-yellow-500 font-medium">AI Sedang Memproses...</p>
+        </div>
+
+        <div id="result" class="flex justify-center my-8 min-h-[100px]"></div>
+
+        <div class="border-t border-gray-800 pt-8 mt-8">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">📂 Riwayat Sesi</h2>
+            <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <script>
+        // FUNGSI RESET OTOMATIS & MANUAL
+        async function totalReset() {
+            console.log("Menjalankan Reset Akun...");
+            try {
+                await puter.auth.signOut(); // Keluar dari sesi Puter
+                localStorage.clear();       // Bersihkan history & cache
+                sessionStorage.clear();
+                // Refresh halaman dengan parameter unik agar dianggap pengunjung baru
+                window.location.replace(window.location.pathname + "?reset=" + Date.now());
+            } catch (e) {
+                window.location.reload();
+            }
         }
-    }
-}
 
-// Logika Generator
-async function runGen(type) {
-    const prompt = document.getElementById('prompt').value.trim();
-    if(!prompt) return alert("Masukkan prompt!");
+        async function generate(type) {
+            const prompt = document.getElementById('prompt').value.trim();
+            const loader = document.getElementById('loader');
+            const resArea = document.getElementById('result');
+            
+            if(!prompt) return alert("Silakan isi prompt!");
 
-    const loader = document.getElementById('loader');
-    const resultDiv = document.getElementById('main-result');
-    
-    loader.classList.remove('hidden');
-    resultDiv.innerHTML = "";
+            loader.classList.remove('hidden');
+            resArea.innerHTML = "";
 
-    try {
-        let output;
-        const ratio = document.getElementById('ratio').value;
-        const size = ratio === "1:1" ? "1024x1024" : (ratio === "9:16" ? "720x1280" : "1280x720");
+            try {
+                let out;
+                const ratio = document.getElementById('ratio').value;
+                const size = ratio === "1:1" ? "1024x1024" : (ratio === "9:16" ? "720x1280" : "1280x720");
 
-        if(type === 'image') {
-            output = await puter.ai.txt2img(prompt, { size });
-        } else {
-            output = await puter.ai.txt2vid(prompt, {
-                model: "sora-2",
-                seconds: parseInt(document.getElementById('duration').value),
-                size
+                if(type === 'image') {
+                    out = await puter.ai.txt2img(prompt, { size });
+                } else {
+                    out = await puter.ai.txt2vid(prompt, {
+                        model: "sora-2",
+                        seconds: parseInt(document.getElementById('duration').value),
+                        size: size
+                    });
+                }
+
+                loader.classList.add('hidden');
+                out.className = "rounded-2xl border-2 border-gray-800 shadow-2xl max-w-full";
+                if(type === 'video') out.controls = true;
+                resArea.appendChild(out);
+                
+                const src = type === 'video' ? (out.querySelector("source")?.src || out.src) : out.src;
+                saveHistory(type, src);
+
+            } catch (err) {
+                loader.classList.add('hidden');
+                const errMsg = err.message.toLowerCase();
+                
+                // --- LOGIKA OTOMATIS RESET DI SINI ---
+                if (errMsg.includes("funding") || errMsg.includes("quota") || errMsg.includes("upgrade") || errMsg.includes("rate limit")) {
+                    console.log("Kuota terdeteksi habis. Memulai Auto-Reset...");
+                    
+                    resArea.innerHTML = `<div class="bg-red-600/20 border border-red-500 p-4 rounded-xl text-red-400 text-center w-full">
+                        <b>Kuota Habis!</b><br>Sistem sedang mereset akun Anda secara otomatis dalam 2 detik...
+                    </div>`;
+                    
+                    // Tunggu 2 detik agar user sempat baca, lalu reset otomatis
+                    setTimeout(() => {
+                        totalReset();
+                    }, 2000);
+                    
+                } else {
+                    alert("Error: " + err.message);
+                }
+            }
+        }
+
+        function saveHistory(type, src) {
+            const h = JSON.parse(localStorage.getItem("ai_logs_v2") || "[]");
+            h.unshift({type, src, time: new Date().toLocaleTimeString()});
+            localStorage.setItem("ai_logs_v2", JSON.stringify(h.slice(0, 12)));
+            showHistory();
+        }
+
+        function showHistory() {
+            const gal = document.getElementById('gallery');
+            gal.innerHTML = "";
+            const h = JSON.parse(localStorage.getItem("ai_logs_v2") || "[]");
+            h.forEach(i => {
+                const card = document.createElement("div");
+                card.className = "bg-[#151515] p-2 rounded-xl border border-gray-800 shadow-lg";
+                
+                const el = document.createElement(i.type === 'image' ? 'img' : 'video');
+                el.src = i.src;
+                if(i.type === 'video') el.controls = true;
+                el.className = "w-full aspect-video object-cover rounded-lg bg-black mb-2";
+                
+                const timeStr = document.createElement("p");
+                timeStr.className = "text-[9px] text-gray-600 text-right";
+                timeStr.innerText = i.time;
+                
+                card.append(el, timeStr);
+                gal.appendChild(card);
             });
         }
-
-        loader.classList.add('hidden');
-        output.className = "rounded-xl border border-gray-700 max-w-full shadow-2xl";
-        if(type === 'video') output.controls = true;
-        resultDiv.appendChild(output);
-        
-        saveHistory(type, (type === 'video' ? (output.querySelector("source")?.src || output.src) : output.src));
-
-    } catch (err) {
-        loader.classList.add('hidden');
-        console.error(err);
-        
-        // Cek jika error karena funding/kuota
-        if (err.message && (err.message.includes("funding") || err.message.includes("upgrade") || err.message.includes("quota"))) {
-            alert("⚠️ KUOTA HABIS!\n\nSilakan klik tombol merah 'RESET AKUN' di pojok kanan atas layar.");
-        } else {
-            alert("Terjadi kesalahan: " + err.message);
-        }
-    }
-}
-
-function saveHistory(type, src) {
-    const list = JSON.parse(localStorage.getItem("ai_logs") || "[]");
-    list.unshift({ type, src, date: new Date().toLocaleTimeString() });
-    localStorage.setItem("ai_logs", JSON.stringify(list.slice(0, 12)));
-    renderHistory();
-}
-
-function renderHistory() {
-    const gallery = document.getElementById("gallery");
-    gallery.innerHTML = "";
-    const list = JSON.parse(localStorage.getItem("ai_logs") || "[]");
-    list.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "bg-[#111] p-2 rounded-lg border border-gray-800";
-        const el = item.type === "image" ? document.createElement("img") : document.createElement("video");
-        el.src = item.src;
-        if(item.type === "video") el.controls = true;
-        el.className = "rounded w-full aspect-video object-cover mb-2";
-        div.innerHTML = `<p class="text-[9px] text-gray-600 mb-1">${item.date}</p>`;
-        div.prepend(el);
-        gallery.appendChild(div);
-    });
-}
-
-renderHistory();
-</script>
+        showHistory();
+    </script>
 </body>
 </html>
