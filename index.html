@@ -3,122 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Generator - Force Auto Reset</title>
+    <title>AI Generator - Auto Reset Mode</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.puter.com/v2/"></script>
+
     <style>
-        /* Sembunyikan pesan error otomatis dari Puter jika memungkinkan */
-        .puter-error-modal, .puter-modal-container { display: none !important; }
-        #force-ui { position: relative; z-index: 10; }
+        /* Sembunyikan paksa modal error bawaan Puter agar tidak mengganggu UI */
+        .puter-modal-container, [class*="puter-error"], iframe[src*="puter"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
     </style>
 </head>
 <body class="bg-[#050505] text-white">
 
-    <div id="auto-reset-alert" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white text-center py-2 font-bold z-[999999]">
-        ⚠️ KUOTA HABIS! MEMBERSIHKAN SESI DAN REFRESH OTOMATIS...
+    <div id="status-alert" class="hidden fixed top-0 w-full bg-red-600 text-[10px] py-1 text-center font-bold z-[99999] animate-pulse">
+        DETEKSI KUOTA HABIS: MERESET AKUN OTOMATIS...
     </div>
 
-    <div id="force-ui" class="max-w-4xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-blue-400">🎬 AI Video Generator</h1>
-            <button onclick="executeReset()" class="text-[10px] border border-gray-700 px-2 py-1 rounded">Reset Manual</button>
-        </div>
+    <div class="max-w-xl mx-auto p-6 pt-12">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-extrabold text-blue-500 tracking-tighter">AI VIDEO GEN</h1>
+            <p class="text-gray-500 text-xs mt-1">Sistem Auto-Reset Aktif</p>
+        </header>
 
-        <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
-            <textarea id="prompt" class="w-full p-4 bg-black border border-gray-800 rounded-xl mb-4 outline-none focus:border-blue-500" rows="3" placeholder="Deskripsikan video/gambar..."></textarea>
+        <div class="bg-gray-900/40 p-5 rounded-3xl border border-gray-800 backdrop-blur-md shadow-2xl">
+            <textarea id="prompt" 
+                class="w-full p-4 bg-black/50 border border-gray-800 rounded-2xl mb-4 focus:border-blue-500 outline-none transition-all text-sm" 
+                rows="4" 
+                placeholder="Tulis deskripsi video atau gambar di sini..."></textarea>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <select id="ratio" class="bg-black border border-gray-700 p-2 rounded-lg text-sm">
-                    <option value="16:9">16:9</option>
-                    <option value="1:1">1:1</option>
-                    <option value="9:16">9:16</option>
-                </select>
-                <select id="duration" class="bg-black border border-gray-700 p-2 rounded-lg text-sm">
-                    <option value="4">4s</option>
-                    <option value="8" selected>8s</option>
-                </select>
-                <button onclick="startProcess('image')" class="bg-emerald-600 rounded-lg font-bold py-2">Gambar</button>
-                <button onclick="startProcess('video')" class="bg-blue-600 rounded-lg font-bold py-2">Video</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="execute('image')" class="bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition active:scale-95 text-sm">
+                    🖼 GAMBAR
+                </button>
+                <button onclick="execute('video')" class="bg-blue-600 font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95 text-sm">
+                    🎥 VIDEO
+                </button>
             </div>
         </div>
 
-        <div id="loading" class="hidden text-center my-10 animate-bounce text-yellow-500">⏳ Sedang memproses...</div>
-        <div id="result" class="flex justify-center my-8"></div>
-        
-        <div id="gallery" class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-10"></div>
+        <div id="loader" class="hidden flex flex-col items-center my-10">
+            <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold">AI Processing...</p>
+        </div>
+
+        <div id="result" class="mt-8 flex justify-center"></div>
+
+        <div class="mt-12">
+            <h2 class="text-xs font-bold text-gray-600 uppercase tracking-widest mb-4">Riwayat Sesi</h2>
+            <div id="gallery" class="grid grid-cols-2 gap-4"></div>
+        </div>
     </div>
 
     <script>
-        // FUNGSI RESET YANG SANGAT AGRESIF
-        async function executeReset() {
-            document.getElementById('auto-reset-alert').classList.remove('hidden');
+        // 1. FUNGSI MEMBERSIHKAN IDENTITAS (RESET)
+        async function runAutoReset() {
+            document.getElementById('status-alert').classList.remove('hidden');
             try {
+                // Keluar dari sesi Puter saat ini
                 await puter.auth.signOut();
+                // Hapus semua data yang bisa melacak identitas di browser
                 localStorage.clear();
                 sessionStorage.clear();
-                // Menghapus cookies Puter secara manual jika memungkinkan
-                document.cookie.split(";").forEach(function(c) { 
-                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                // Hapus semua cookies
+                document.cookie.split(";").forEach(c => {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
                 });
-            } catch (e) {}
-            
-            // Refresh paksa
-            setTimeout(() => {
-                window.location.replace(window.location.pathname + "?t=" + Date.now());
-            }, 1000);
+                
+                // Reload halaman dengan parameter unik agar dianggap user baru
+                setTimeout(() => {
+                    window.location.replace(window.location.pathname + "?new_sid=" + Math.random());
+                }, 800);
+            } catch (e) {
+                window.location.reload();
+            }
         }
 
-        // Jalankan pengecekan error secara berkala (Watcher)
-        // Jika muncul teks "funding" atau "upgrade" di layar, langsung reset
+        // 2. WATCHER: MEMANTAU PESAN ERROR "FUNDING"
+        // Jika Puter memunculkan teks error di layar, script langsung reset otomatis
         setInterval(() => {
-            const pageText = document.body.innerText.toLowerCase();
-            if (pageText.includes("enough funding") || pageText.includes("please upgrade")) {
-                executeReset();
+            const bodyContent = document.body.innerText.toLowerCase();
+            if (bodyContent.includes("enough funding") || bodyContent.includes("upgrade to continue")) {
+                runAutoReset();
             }
-        }, 500);
+        }, 1000);
 
-        async function startProcess(type) {
-            const prompt = document.getElementById('prompt').value;
+        // 3. LOGIKA GENERATE
+        async function execute(type) {
+            const prompt = document.getElementById('prompt').value.trim();
+            const loader = document.getElementById('loader');
             const resArea = document.getElementById('result');
-            const loader = document.getElementById('loading');
 
-            if(!prompt) return alert("Isi prompt!");
+            if(!prompt) return alert("Prompt tidak boleh kosong!");
+            
             loader.classList.remove('hidden');
             resArea.innerHTML = "";
 
             try {
-                let out;
-                const r = document.getElementById('ratio').value;
-                const sz = r === "1:1" ? "1024x1024" : (r === "9:16" ? "720x1280" : "1280x720");
-
+                let output;
                 if(type === 'image') {
-                    out = await puter.ai.txt2img(prompt, { size: sz });
+                    output = await puter.ai.txt2img(prompt);
                 } else {
-                    out = await puter.ai.txt2vid(prompt, {
-                        model: "sora-2",
-                        seconds: parseInt(document.getElementById('duration').value),
-                        size: sz
-                    });
+                    output = await puter.ai.txt2vid(prompt, { model: "sora-2" });
                 }
 
                 loader.classList.add('hidden');
-                out.className = "rounded-xl max-w-full border-2 border-gray-800 shadow-2xl";
-                if(type === 'video') out.controls = true;
-                resArea.appendChild(out);
+                output.className = "rounded-2xl max-w-full border border-gray-800 shadow-2xl";
+                if(type === 'video') output.controls = true;
+                resArea.appendChild(output);
+                
+                // Simpan ke riwayat lokal
+                saveToGallery(type, (type === 'video' ? (output.querySelector("source")?.src || output.src) : output.src));
 
             } catch (err) {
                 loader.classList.add('hidden');
-                console.error("Caught Error:", err.message);
+                console.error("Puter Error:", err.message);
                 
-                // Jika error tertangkap di sini, jalankan reset
-                if (err.message.includes("funding") || err.message.includes("upgrade") || err.message.includes("quota")) {
-                    executeReset();
+                // Jika error terdeteksi lewat script, picu reset
+                if (err.message.includes("funding") || err.message.includes("upgrade")) {
+                    runAutoReset();
                 } else {
-                    alert("Terjadi masalah teknis. Mencoba mereset...");
-                    executeReset();
+                    alert("Gagal: " + err.message);
                 }
             }
         }
+
+        function saveToGallery(type, src) {
+            const logs = JSON.parse(localStorage.getItem("ai_gallery") || "[]");
+            logs.unshift({type, src});
+            localStorage.setItem("ai_gallery", JSON.stringify(logs.slice(0, 6)));
+            renderGallery();
+        }
+
+        function renderGallery() {
+            const gal = document.getElementById('gallery');
+            gal.innerHTML = "";
+            const logs = JSON.parse(localStorage.getItem("ai_gallery") || "[]");
+            logs.forEach(i => {
+                const el = document.createElement(i.type === 'image' ? 'img' : 'video');
+                el.src = i.src;
+                if(i.type === 'video') el.controls = true;
+                el.className = "w-full aspect-square object-cover rounded-xl border border-gray-900 bg-gray-900";
+                gal.appendChild(el);
+            });
+        }
+
+        // Membersihkan sesi setiap kali halaman baru dibuka agar kuota fresh
+        window.onload = () => {
+            puter.auth.signOut();
+            renderGallery();
+        };
     </script>
 </body>
 </html>
