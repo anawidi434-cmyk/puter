@@ -10,127 +10,188 @@
   <!-- Puter.js -->
   <script src="https://js.puter.com/v2/"></script>
 </head>
+
 <body class="bg-gray-950 text-white min-h-screen">
+<div class="max-w-5xl mx-auto p-6">
 
-  <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-2">🎬 AI Image & Video Generator</h1>
-    <p class="text-gray-400 mb-6">Gratis • Tanpa API Key • Tanpa Billing</p>
+  <h1 class="text-3xl font-bold">🎬 AI Image & Video Generator</h1>
+  <p class="text-gray-400 mb-6">Gratis • Tanpa API Key • Tanpa Billing</p>
 
-    <!-- Prompt -->
-    <textarea
-      id="prompt"
-      class="w-full p-4 rounded bg-gray-900 border border-gray-700 focus:outline-none focus:ring focus:ring-blue-500"
-      rows="3"
-      placeholder="Contoh: Cinematic sunset over mountains, ultra realistic"
-    ></textarea>
+  <!-- Prompt -->
+  <textarea id="prompt"
+    class="w-full p-4 rounded bg-gray-900 border border-gray-700"
+    rows="3"
+    placeholder="Contoh: Cinematic sunset over mountains, ultra realistic">
+  </textarea>
 
-    <!-- Buttons -->
-    <div class="flex gap-4 mt-4">
-      <button
-        onclick="generateImage()"
-        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-semibold"
-      >
-        🖼 Generate Image
-      </button>
-
-      <button
-        onclick="generateVideo()"
-        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-semibold"
-      >
-        🎥 Generate Video
-      </button>
-    </div>
-
-    <!-- Loading -->
-    <div id="loading" class="hidden mt-4 text-yellow-400">
-      ⏳ Generating, please wait...
-    </div>
-
-    <!-- Result -->
-    <div id="result" class="mt-8"></div>
-
-    <!-- Gallery -->
-    <h2 class="text-xl font-semibold mt-10 mb-4">📁 Gallery</h2>
-    <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+  <!-- Presets -->
+  <div class="flex flex-wrap gap-2 mt-3">
+    <button onclick="setPreset('cinematic')"
+      class="px-3 py-1 bg-gray-800 rounded">🎬 Cinematic</button>
+    <button onclick="setPreset('anime')"
+      class="px-3 py-1 bg-gray-800 rounded">🎨 Anime</button>
+    <button onclick="setPreset('nature')"
+      class="px-3 py-1 bg-gray-800 rounded">🏞 Nature</button>
+    <button onclick="setPreset('city')"
+      class="px-3 py-1 bg-gray-800 rounded">🌆 City</button>
   </div>
 
+  <!-- Options -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+
+    <div>
+      <label class="text-sm text-gray-400">Aspect Ratio</label>
+      <select id="ratio" class="w-full bg-gray-900 border border-gray-700 p-2 rounded">
+        <option value="1:1">1:1 (Square)</option>
+        <option value="16:9" selected>16:9 (Landscape)</option>
+        <option value="9:16">9:16 (Portrait)</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="text-sm text-gray-400">Durasi Video</label>
+      <select id="duration" class="w-full bg-gray-900 border border-gray-700 p-2 rounded">
+        <option value="4">4 detik</option>
+        <option value="6">6 detik</option>
+        <option value="8" selected>8 detik</option>
+        <option value="12">12 detik</option>
+      </select>
+    </div>
+
+    <div class="flex items-end gap-3">
+      <button onclick="generateImage()"
+        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded w-full">
+        🖼 Image
+      </button>
+      <button onclick="generateVideo()"
+        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-full">
+        🎥 Video
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="hidden mt-4 text-yellow-400">
+    ⏳ Generating, please wait...
+  </div>
+
+  <!-- Result -->
+  <div id="result" class="mt-6"></div>
+
+  <!-- Gallery -->
+  <h2 class="text-xl font-semibold mt-10 mb-4">📁 History</h2>
+  <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+</div>
+
 <script>
-  const loading = document.getElementById("loading");
-  const result = document.getElementById("result");
-  const gallery = document.getElementById("gallery");
+const loading = document.getElementById("loading");
+const result = document.getElementById("result");
+const gallery = document.getElementById("gallery");
 
-  function showLoading(show) {
-    loading.classList.toggle("hidden", !show);
-  }
+const presets = {
+  cinematic: "cinematic lighting, ultra realistic, dramatic camera movement",
+  anime: "anime style, vibrant colors, smooth motion",
+  nature: "beautiful nature landscape, realistic, soft light",
+  city: "futuristic city, neon lights, cyberpunk style"
+};
 
-  function addToGallery(element, downloadUrl, type) {
+function setPreset(type) {
+  document.getElementById("prompt").value +=
+    (document.getElementById("prompt").value ? ", " : "") + presets[type];
+}
+
+function showLoading(v) {
+  loading.classList.toggle("hidden", !v);
+}
+
+function saveHistory(type, src) {
+  const items = JSON.parse(localStorage.getItem("history") || "[]");
+  items.unshift({ type, src });
+  localStorage.setItem("history", JSON.stringify(items.slice(0, 20)));
+  renderHistory();
+}
+
+function renderHistory() {
+  gallery.innerHTML = "";
+  const items = JSON.parse(localStorage.getItem("history") || "[]");
+  items.forEach(item => {
     const card = document.createElement("div");
     card.className = "bg-gray-900 p-3 rounded border border-gray-700";
 
-    const downloadBtn = document.createElement("a");
-    downloadBtn.href = downloadUrl;
-    downloadBtn.download = type === "video" ? "video.mp4" : "image.png";
-    downloadBtn.textContent = "⬇ Download";
-    downloadBtn.className =
-      "inline-block mt-2 bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded text-sm";
+    let el;
+    if (item.type === "image") {
+      el = document.createElement("img");
+      el.src = item.src;
+    } else {
+      el = document.createElement("video");
+      el.src = item.src;
+      el.controls = true;
+    }
+    el.className = "rounded w-full";
 
-    card.appendChild(element);
-    card.appendChild(downloadBtn);
-    gallery.prepend(card);
-  }
+    const a = document.createElement("a");
+    a.href = item.src;
+    a.download = item.type === "video" ? "video.mp4" : "image.png";
+    a.className = "block mt-2 text-sm bg-gray-800 px-3 py-1 rounded";
+    a.textContent = "⬇ Download";
 
-  // IMAGE
-  function generateImage() {
-    const prompt = document.getElementById("prompt").value.trim();
-    if (!prompt) return alert("Prompt tidak boleh kosong");
+    card.append(el, a);
+    gallery.appendChild(card);
+  });
+}
 
-    showLoading(true);
-    result.innerHTML = "";
+function getSize() {
+  const r = document.getElementById("ratio").value;
+  if (r === "1:1") return "1024x1024";
+  if (r === "9:16") return "720x1280";
+  return "1280x720";
+}
 
-    puter.ai.txt2img(prompt)
-      .then(img => {
-        showLoading(false);
-        img.className = "rounded border border-gray-700 max-w-full";
-        result.appendChild(img);
-        addToGallery(img.cloneNode(), img.src, "image");
-      })
-      .catch(err => {
-        showLoading(false);
-        alert("Gagal generate image");
-        console.error(err);
-      });
-  }
+function generateImage() {
+  const prompt = document.getElementById("prompt").value.trim();
+  if (!prompt) return alert("Prompt kosong");
 
-  // VIDEO
-  function generateVideo() {
-    const prompt = document.getElementById("prompt").value.trim();
-    if (!prompt) return alert("Prompt tidak boleh kosong");
+  showLoading(true);
+  result.innerHTML = "";
 
-    showLoading(true);
-    result.innerHTML = "";
-
-    puter.ai.txt2vid(prompt, {
-      model: "sora-2",
-      seconds: 8,
-      size: "1280x720"
-    })
-    .then(video => {
+  puter.ai.txt2img(prompt, { size: getSize() })
+    .then(img => {
       showLoading(false);
-      video.controls = true;
-      video.className = "rounded border border-gray-700 w-full";
-      result.appendChild(video);
-
-      const src = video.querySelector("source")?.src || video.src;
-      addToGallery(video.cloneNode(true), src, "video");
-      video.play().catch(()=>{});
+      img.className = "rounded border border-gray-700 max-w-full";
+      result.appendChild(img);
+      saveHistory("image", img.src);
     })
-    .catch(err => {
-      showLoading(false);
-      alert("Gagal generate video");
-      console.error(err);
-    });
-  }
+    .catch(() => showLoading(false));
+}
+
+function generateVideo() {
+  const prompt = document.getElementById("prompt").value.trim();
+  if (!prompt) return alert("Prompt kosong");
+
+  showLoading(true);
+  result.innerHTML = "";
+
+  puter.ai.txt2vid(prompt, {
+    model: "sora-2",
+    seconds: parseInt(document.getElementById("duration").value),
+    size: getSize()
+  })
+  .then(video => {
+    showLoading(false);
+    video.controls = true;
+    video.className = "rounded border border-gray-700 w-full";
+    result.appendChild(video);
+
+    const src = video.querySelector("source")?.src || video.src;
+    saveHistory("video", src);
+    video.play().catch(()=>{});
+  })
+  .catch(() => showLoading(false));
+}
+
+renderHistory();
 </script>
-
 </body>
 </html>
