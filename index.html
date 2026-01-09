@@ -3,176 +3,196 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Generator - Fixed Reset</title>
+  <title>AI Generator (Bypass Funding Error)</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://js.puter.com/v2/"></script>
+
   <style>
-    /* Menjamin tombol reset selalu di depan */
-    #emergency-reset {
+    /* Tombol Reset yang selalu berada di atas semua elemen */
+    #reset-btn-fixed {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 9999;
+      top: 15px;
+      right: 15px;
+      z-index: 999999; /* Sangat tinggi agar tidak tertutup pesan error */
+    }
+    .result-container img, .result-container video {
+      max-height: 500px;
+      object-fit: contain;
     }
   </style>
 </head>
 
-<body class="bg-gray-950 text-white min-h-screen pb-20">
+<body class="bg-black text-gray-100 min-h-screen">
 
-  <div id="emergency-reset">
-    <button onclick="resetAccount()" 
-      class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-bold shadow-2xl border-2 border-white flex items-center gap-2 transition-transform active:scale-95">
-      🔄 RESET SESI SEKARANG
+  <div id="reset-btn-fixed">
+    <button onclick="forceReset()" 
+      class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-full font-black shadow-[0_0_20px_rgba(220,38,38,0.5)] border-2 border-white flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
+      🔄 RESET KUOTA / GANTI AKUN
     </button>
   </div>
 
-  <div class="max-w-5xl mx-auto p-6 pt-16">
+  <div class="max-w-4xl mx-auto p-6 pt-20">
+    <header class="mb-10 text-center">
+      <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+        AI Video & Image Gen
+      </h1>
+      <p class="text-gray-500 mt-2">Jika muncul error "Not enough funding", tekan tombol merah di atas.</p>
+    </header>
 
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-blue-400">🎬 AI Video & Image</h1>
-      <p class="text-gray-400">Jika muncul "Not enough funding", klik tombol merah di pojok kanan atas.</p>
-    </div>
-
-    <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-xl mb-10">
+    <div class="bg-gray-900/50 p-6 rounded-3xl border border-gray-800 backdrop-blur-sm shadow-2xl mb-10">
       <textarea id="prompt"
-        class="w-full p-4 rounded-xl bg-gray-950 border border-gray-700 focus:border-blue-500 outline-none text-white mb-4"
+        class="w-full p-4 rounded-2xl bg-gray-950 border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none text-white transition-all text-lg"
         rows="3"
-        placeholder="Contoh: A cyberpunk city in 2077, rain, neon lights..."></textarea>
+        placeholder="Deskripsikan gambar atau video..."></textarea>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <div>
-          <label class="text-xs text-gray-500 font-bold mb-1 block">ASPECT RATIO</label>
-          <select id="ratio" class="w-full bg-gray-950 border border-gray-700 p-2.5 rounded-lg">
+          <label class="text-[10px] text-gray-500 font-bold tracking-widest uppercase mb-2 block">Ukuran</label>
+          <select id="ratio" class="w-full bg-gray-950 border border-gray-700 p-3 rounded-xl outline-none focus:border-emerald-500">
             <option value="1:1">1:1 (Square)</option>
             <option value="16:9" selected>16:9 (Landscape)</option>
             <option value="9:16">9:16 (Portrait)</option>
           </select>
         </div>
         <div>
-          <label class="text-xs text-gray-500 font-bold mb-1 block">DURASI</label>
-          <select id="duration" class="w-full bg-gray-950 border border-gray-700 p-2.5 rounded-lg">
-            <option value="4">4 detik</option>
-            <option value="8" selected>8 detik</option>
+          <label class="text-[10px] text-gray-500 font-bold tracking-widest uppercase mb-2 block">Durasi (Video)</label>
+          <select id="duration" class="w-full bg-gray-950 border border-gray-700 p-3 rounded-xl outline-none focus:border-emerald-500">
+            <option value="4">4 Detik</option>
+            <option value="8" selected>8 Detik</option>
+            <option value="12">12 Detik</option>
           </select>
         </div>
         <div class="flex items-end gap-2">
-          <button onclick="generateImage()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2.5 rounded-lg flex-1 font-bold">🖼 Image</button>
-          <button onclick="generateVideo()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-lg flex-1 font-bold">🎥 Video</button>
+          <button onclick="generate('image')" class="bg-white text-black hover:bg-gray-200 px-4 py-3 rounded-xl flex-1 font-bold transition-all shadow-lg">🖼 Gambar</button>
+          <button onclick="generate('video')" class="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-xl flex-1 font-bold transition-all shadow-lg">🎥 Video</button>
         </div>
       </div>
     </div>
 
-    <div id="loading" class="hidden text-center my-10 animate-bounce">
-      <span class="bg-yellow-500 text-black px-4 py-1 rounded-full font-bold">⏳ AI sedang bekerja...</span>
+    <div id="loading" class="hidden flex flex-col items-center my-10 animate-pulse">
+      <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p class="text-yellow-500 font-bold">AI sedang memproses... (Sekitar 30-60 detik)</p>
     </div>
 
-    <div id="result" class="flex justify-center mb-10"></div>
+    <div id="result" class="result-container flex justify-center mb-16"></div>
 
-    <h2 class="text-xl font-bold mb-4 border-b border-gray-800 pb-2">📁 History</h2>
-    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
-
+    <div class="border-t border-gray-800 pt-10">
+      <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+        <span>📁 Riwayat Sesi Ini</span>
+        <span class="text-xs font-normal text-gray-500">(Tersimpan di browser)</span>
+      </h2>
+      <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+    </div>
   </div>
 
 <script>
+// Referensi UI
 const loading = document.getElementById("loading");
 const result = document.getElementById("result");
 const gallery = document.getElementById("gallery");
 
-// Fungsi Reset Mutlak
-async function resetAccount() {
-    try {
-        // Hapus session dari Puter
-        await puter.auth.signOut();
-        // Hapus cache browser yang mungkin menyimpan ID lama
-        localStorage.clear();
-        alert("Sesi dihapus. Halaman akan memuat ulang untuk mendapatkan identitas baru.");
-        window.location.reload();
-    } catch (e) {
-        // Jika puter.auth gagal, paksa bersihkan dan reload
-        window.location.reload();
+// FUNGSI UTAMA: Reset Sesi (Bypass Kuota)
+async function forceReset() {
+    if(confirm("Sesi akan di-reset. Tindakan ini akan mengeluarkan Anda dari akun saat ini untuk mencoba mendapatkan kuota baru. Lanjutkan?")) {
+        try {
+            await puter.auth.signOut();
+            // Membersihkan data lokal yang mungkin menempel
+            localStorage.clear();
+            sessionStorage.clear();
+            // Reload paksa
+            window.location.href = window.location.pathname + "?reload=" + Date.now();
+        } catch (e) {
+            window.location.reload();
+        }
     }
 }
 
-function showLoading(v) {
-    loading.classList.toggle("hidden", !v);
-    if(v) result.innerHTML = "";
+function showLoading(show) {
+    loading.classList.toggle("hidden", !show);
+    if(show) result.innerHTML = "";
 }
 
-function getSize() {
+function getDimensions() {
     const r = document.getElementById("ratio").value;
     if (r === "1:1") return "1024x1024";
     if (r === "9:16") return "720x1280";
     return "1280x720";
 }
 
-async function generateImage() {
-    const prompt = document.getElementById("prompt").value;
+// Fungsi Generate (Gabungan)
+async function generate(type) {
+    const prompt = document.getElementById("prompt").value.trim();
+    if (!prompt) return alert("Masukkan deskripsi terlebih dahulu!");
+
     showLoading(true);
+    
     try {
-        const img = await puter.ai.txt2img(prompt, { size: getSize() });
+        let output;
+        if (type === 'image') {
+            output = await puter.ai.txt2img(prompt, { size: getDimensions() });
+        } else {
+            output = await puter.ai.txt2vid(prompt, {
+                model: "sora-2",
+                seconds: parseInt(document.getElementById("duration").value),
+                size: getDimensions()
+            });
+        }
+
         showLoading(false);
-        img.className = "rounded-xl border border-gray-700 max-w-full shadow-2xl";
-        result.appendChild(img);
-        saveHistory("image", img.src);
+        output.className = "rounded-2xl border-2 border-gray-800 shadow-2xl max-w-full";
+        if(type === 'video') output.controls = true;
+        
+        result.appendChild(output);
+        
+        // Simpan ke riwayat
+        const src = type === 'video' ? (output.querySelector("source")?.src || output.src) : output.src;
+        saveToHistory(type, src);
+
     } catch (err) {
         showLoading(false);
-        handleError(err);
+        console.error("Puter Error:", err);
+
+        // Deteksi Otomatis Funding/Quota Error
+        if (err.message && (err.message.toLowerCase().includes("funding") || err.message.toLowerCase().includes("upgrade") || err.message.toLowerCase().includes("quota"))) {
+            alert("⚠️ KUOTA HABIS!\n\nPuter mendeteksi akun Anda kekurangan dana (funding). Silakan tekan tombol merah 'RESET KUOTA' di pojok kanan atas untuk menyegarkan sesi.");
+        } else {
+            alert("Terjadi kesalahan: " + err.message);
+        }
     }
 }
 
-async function generateVideo() {
-    const prompt = document.getElementById("prompt").value;
-    showLoading(true);
-    try {
-        const video = await puter.ai.txt2vid(prompt, {
-            model: "sora-2",
-            seconds: parseInt(document.getElementById("duration").value),
-            size: getSize()
-        });
-        showLoading(false);
-        video.controls = true;
-        video.className = "rounded-xl border border-gray-700 w-full shadow-2xl";
-        result.appendChild(video);
-        const src = video.querySelector("source")?.src || video.src;
-        saveHistory("video", src);
-    } catch (err) {
-        showLoading(false);
-        handleError(err);
-    }
-}
-
-function handleError(err) {
-    console.error(err);
-    // Jika terdeteksi error funding/quota
-    if (err.message && (err.message.includes("funding") || err.message.includes("upgrade") || err.message.includes("quota"))) {
-        alert("⚠️ KUOTA ANDA HABIS.\n\nKlik tombol merah 'RESET SESI SEKARANG' di pojok kanan atas untuk mendapatkan kuota gratis baru.");
-    } else {
-        alert("Error: " + err.message);
-    }
-}
-
-function saveHistory(type, src) {
-    const items = JSON.parse(localStorage.getItem("ai_history") || "[]");
-    items.unshift({ type, src });
-    localStorage.setItem("ai_history", JSON.stringify(items.slice(0, 12)));
+function saveToHistory(type, src) {
+    const history = JSON.parse(localStorage.getItem("ai_gen_history") || "[]");
+    history.unshift({ type, src, time: new Date().toLocaleTimeString() });
+    localStorage.setItem("ai_gen_history", JSON.stringify(history.slice(0, 12)));
     renderHistory();
 }
 
 function renderHistory() {
     gallery.innerHTML = "";
-    const items = JSON.parse(localStorage.getItem("ai_history") || "[]");
-    items.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "bg-gray-900 p-2 rounded-lg border border-gray-800";
-        const el = item.type === "image" ? document.createElement("img") : document.createElement("video");
-        el.src = item.src;
-        if(item.type === "video") el.controls = true;
-        el.className = "rounded w-full aspect-video object-cover";
-        div.appendChild(el);
-        gallery.appendChild(div);
+    const history = JSON.parse(localStorage.getItem("ai_gen_history") || "[]");
+    
+    history.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "bg-gray-900/50 p-2 rounded-2xl border border-gray-800 overflow-hidden";
+        
+        const media = item.type === "image" ? document.createElement("img") : document.createElement("video");
+        media.src = item.src;
+        if(item.type === "video") media.controls = true;
+        media.className = "rounded-xl w-full aspect-video object-cover bg-black mb-2";
+        
+        const info = document.createElement("div");
+        info.className = "flex justify-between items-center px-2 pb-1";
+        info.innerHTML = `<span class="text-[10px] text-gray-600 font-mono">${item.time}</span>
+                         <a href="${item.src}" download class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-300">Download</a>`;
+        
+        card.append(media, info);
+        gallery.appendChild(card);
     });
 }
 
+// Jalankan history saat pertama buka
 renderHistory();
 </script>
 </body>
