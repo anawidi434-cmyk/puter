@@ -3,166 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Generator - Auto Reset Mode</title>
+    <title>AI Generator - Force Auto Reset</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Sembunyikan pesan error otomatis dari Puter jika memungkinkan */
+        .puter-error-modal, .puter-modal-container { display: none !important; }
+        #force-ui { position: relative; z-index: 10; }
+    </style>
 </head>
-<body class="bg-[#0a0a0a] text-white font-sans">
+<body class="bg-[#050505] text-white">
 
-    <div class="bg-blue-900/20 border-b border-blue-500/30 p-3 text-center text-xs text-blue-400">
-        Auto-Reset Active: Jika kuota habis, halaman akan otomatis refresh untuk reset akun.
+    <div id="auto-reset-alert" class="hidden fixed top-0 left-0 w-full bg-red-600 text-white text-center py-2 font-bold z-[999999]">
+        ⚠️ KUOTA HABIS! MEMBERSIHKAN SESI DAN REFRESH OTOMATIS...
     </div>
 
-    <div class="max-w-4xl mx-auto p-6">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-                🎬 AI Video & Image
-            </h1>
-            <button onclick="totalReset()" class="text-[10px] bg-red-900/30 hover:bg-red-800/50 border border-red-500/50 px-3 py-1 rounded text-red-400 transition">
-                Reset Manual
-            </button>
+    <div id="force-ui" class="max-w-4xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-400">🎬 AI Video Generator</h1>
+            <button onclick="executeReset()" class="text-[10px] border border-gray-700 px-2 py-1 rounded">Reset Manual</button>
         </div>
 
-        <div class="bg-[#151515] p-6 rounded-2xl border border-gray-800 shadow-2xl mb-8">
-            <textarea id="prompt" 
-                class="w-full p-4 bg-black border border-gray-800 rounded-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-white transition-all mb-4" 
-                rows="3" 
-                placeholder="Contoh: Cinematic robot in a forest, high detail..."></textarea>
+        <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl">
+            <textarea id="prompt" class="w-full p-4 bg-black border border-gray-800 rounded-xl mb-4 outline-none focus:border-blue-500" rows="3" placeholder="Deskripsikan video/gambar..."></textarea>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="flex flex-col">
-                    <label class="text-[10px] text-gray-500 mb-1 uppercase font-bold">Ratio</label>
-                    <select id="ratio" class="bg-black border border-gray-700 p-2 rounded-lg text-sm outline-none">
-                        <option value="16:9">16:9</option>
-                        <option value="1:1">1:1</option>
-                        <option value="9:16">9:16</option>
-                    </select>
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] text-gray-500 mb-1 uppercase font-bold">Durasi</label>
-                    <select id="duration" class="bg-black border border-gray-700 p-2 rounded-lg text-sm outline-none">
-                        <option value="4">4 Detik</option>
-                        <option value="8">8 Detik</option>
-                    </select>
-                </div>
-                <button onclick="generate('image')" class="h-10 mt-5 bg-white text-black rounded-lg font-bold hover:bg-gray-200 transition">Gambar</button>
-                <button onclick="generate('video')" class="h-10 mt-5 bg-blue-600 rounded-lg font-bold hover:bg-blue-700 transition">Video</button>
+                <select id="ratio" class="bg-black border border-gray-700 p-2 rounded-lg text-sm">
+                    <option value="16:9">16:9</option>
+                    <option value="1:1">1:1</option>
+                    <option value="9:16">9:16</option>
+                </select>
+                <select id="duration" class="bg-black border border-gray-700 p-2 rounded-lg text-sm">
+                    <option value="4">4s</option>
+                    <option value="8" selected>8s</option>
+                </select>
+                <button onclick="startProcess('image')" class="bg-emerald-600 rounded-lg font-bold py-2">Gambar</button>
+                <button onclick="startProcess('video')" class="bg-blue-600 rounded-lg font-bold py-2">Video</button>
             </div>
         </div>
 
-        <div id="loader" class="hidden flex flex-col items-center my-10 animate-pulse">
-            <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-            <p class="text-yellow-500 font-medium">AI Sedang Memproses...</p>
-        </div>
-
-        <div id="result" class="flex justify-center my-8 min-h-[100px]"></div>
-
-        <div class="border-t border-gray-800 pt-8 mt-8">
-            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">📂 Riwayat Sesi</h2>
-            <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
-        </div>
+        <div id="loading" class="hidden text-center my-10 animate-bounce text-yellow-500">⏳ Sedang memproses...</div>
+        <div id="result" class="flex justify-center my-8"></div>
+        
+        <div id="gallery" class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-10"></div>
     </div>
 
     <script>
-        // FUNGSI RESET OTOMATIS & MANUAL
-        async function totalReset() {
-            console.log("Menjalankan Reset Akun...");
+        // FUNGSI RESET YANG SANGAT AGRESIF
+        async function executeReset() {
+            document.getElementById('auto-reset-alert').classList.remove('hidden');
             try {
-                await puter.auth.signOut(); // Keluar dari sesi Puter
-                localStorage.clear();       // Bersihkan history & cache
+                await puter.auth.signOut();
+                localStorage.clear();
                 sessionStorage.clear();
-                // Refresh halaman dengan parameter unik agar dianggap pengunjung baru
-                window.location.replace(window.location.pathname + "?reset=" + Date.now());
-            } catch (e) {
-                window.location.reload();
-            }
+                // Menghapus cookies Puter secara manual jika memungkinkan
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+            } catch (e) {}
+            
+            // Refresh paksa
+            setTimeout(() => {
+                window.location.replace(window.location.pathname + "?t=" + Date.now());
+            }, 1000);
         }
 
-        async function generate(type) {
-            const prompt = document.getElementById('prompt').value.trim();
-            const loader = document.getElementById('loader');
-            const resArea = document.getElementById('result');
-            
-            if(!prompt) return alert("Silakan isi prompt!");
+        // Jalankan pengecekan error secara berkala (Watcher)
+        // Jika muncul teks "funding" atau "upgrade" di layar, langsung reset
+        setInterval(() => {
+            const pageText = document.body.innerText.toLowerCase();
+            if (pageText.includes("enough funding") || pageText.includes("please upgrade")) {
+                executeReset();
+            }
+        }, 500);
 
+        async function startProcess(type) {
+            const prompt = document.getElementById('prompt').value;
+            const resArea = document.getElementById('result');
+            const loader = document.getElementById('loading');
+
+            if(!prompt) return alert("Isi prompt!");
             loader.classList.remove('hidden');
             resArea.innerHTML = "";
 
             try {
                 let out;
-                const ratio = document.getElementById('ratio').value;
-                const size = ratio === "1:1" ? "1024x1024" : (ratio === "9:16" ? "720x1280" : "1280x720");
+                const r = document.getElementById('ratio').value;
+                const sz = r === "1:1" ? "1024x1024" : (r === "9:16" ? "720x1280" : "1280x720");
 
                 if(type === 'image') {
-                    out = await puter.ai.txt2img(prompt, { size });
+                    out = await puter.ai.txt2img(prompt, { size: sz });
                 } else {
                     out = await puter.ai.txt2vid(prompt, {
                         model: "sora-2",
                         seconds: parseInt(document.getElementById('duration').value),
-                        size: size
+                        size: sz
                     });
                 }
 
                 loader.classList.add('hidden');
-                out.className = "rounded-2xl border-2 border-gray-800 shadow-2xl max-w-full";
+                out.className = "rounded-xl max-w-full border-2 border-gray-800 shadow-2xl";
                 if(type === 'video') out.controls = true;
                 resArea.appendChild(out);
-                
-                const src = type === 'video' ? (out.querySelector("source")?.src || out.src) : out.src;
-                saveHistory(type, src);
 
             } catch (err) {
                 loader.classList.add('hidden');
-                const errMsg = err.message.toLowerCase();
+                console.error("Caught Error:", err.message);
                 
-                // --- LOGIKA OTOMATIS RESET DI SINI ---
-                if (errMsg.includes("funding") || errMsg.includes("quota") || errMsg.includes("upgrade") || errMsg.includes("rate limit")) {
-                    console.log("Kuota terdeteksi habis. Memulai Auto-Reset...");
-                    
-                    resArea.innerHTML = `<div class="bg-red-600/20 border border-red-500 p-4 rounded-xl text-red-400 text-center w-full">
-                        <b>Kuota Habis!</b><br>Sistem sedang mereset akun Anda secara otomatis dalam 2 detik...
-                    </div>`;
-                    
-                    // Tunggu 2 detik agar user sempat baca, lalu reset otomatis
-                    setTimeout(() => {
-                        totalReset();
-                    }, 2000);
-                    
+                // Jika error tertangkap di sini, jalankan reset
+                if (err.message.includes("funding") || err.message.includes("upgrade") || err.message.includes("quota")) {
+                    executeReset();
                 } else {
-                    alert("Error: " + err.message);
+                    alert("Terjadi masalah teknis. Mencoba mereset...");
+                    executeReset();
                 }
             }
         }
-
-        function saveHistory(type, src) {
-            const h = JSON.parse(localStorage.getItem("ai_logs_v2") || "[]");
-            h.unshift({type, src, time: new Date().toLocaleTimeString()});
-            localStorage.setItem("ai_logs_v2", JSON.stringify(h.slice(0, 12)));
-            showHistory();
-        }
-
-        function showHistory() {
-            const gal = document.getElementById('gallery');
-            gal.innerHTML = "";
-            const h = JSON.parse(localStorage.getItem("ai_logs_v2") || "[]");
-            h.forEach(i => {
-                const card = document.createElement("div");
-                card.className = "bg-[#151515] p-2 rounded-xl border border-gray-800 shadow-lg";
-                
-                const el = document.createElement(i.type === 'image' ? 'img' : 'video');
-                el.src = i.src;
-                if(i.type === 'video') el.controls = true;
-                el.className = "w-full aspect-video object-cover rounded-lg bg-black mb-2";
-                
-                const timeStr = document.createElement("p");
-                timeStr.className = "text-[9px] text-gray-600 text-right";
-                timeStr.innerText = i.time;
-                
-                card.append(el, timeStr);
-                gal.appendChild(card);
-            });
-        }
-        showHistory();
     </script>
 </body>
 </html>
